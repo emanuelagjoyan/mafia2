@@ -11,6 +11,7 @@
             --red-team: #ff4757;
             --black-team: #2f3542;
             --blue-team: #3742fa;
+            --neutral-team: #05c46b;
             --gold: #f1c40f;
             --bg: #0b0b0b;
             --card-bg: #161616;
@@ -22,7 +23,7 @@
             margin: 0; padding: 10px; -webkit-tap-highlight-color: transparent;
         }
         .container { 
-            max-width: 800px; margin: auto; background: var(--card-bg); 
+            max-width: 900px; margin: auto; background: var(--card-bg); 
             padding: 15px; border-radius: 25px; border: 1px solid #333; 
             box-shadow: 0 0 30px rgba(0,0,0,0.7); position: relative; 
         }
@@ -43,7 +44,11 @@
         .candidate-btn { background: #27ae60; color: white; padding: 8px 12px; width: auto; font-size: 1em; border-radius: 8px; margin: 0; }
         .undo-btn { background: #34495e; color: white; width: auto; padding: 8px 15px; font-size: 0.8em; border-radius: 10px; }
 
-        .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .setup-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        @media (max-width: 600px) {
+            .setup-grid { grid-template-columns: 1fr; } 
+        }
+
         .column { background: #1f1f1f; padding: 10px; border-radius: 15px; border: 1px solid #333; }
         .role-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.9em; }
         
@@ -59,6 +64,7 @@
         .admin-table td { padding: 12px; border-bottom: 1px solid #222; text-align: left; }
         .role-red-text { color: var(--red-team); font-weight: bold; }
         .role-black-text { color: var(--blue-team); font-weight: bold; }
+        .role-neutral-text { color: var(--neutral-team); font-weight: bold; }
 
         #roles-catalog-overlay, #vote-modal-overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
@@ -67,13 +73,31 @@
         }
         .catalog-modal { 
             background: #111; border: 1px solid #444; border-radius: 25px; 
-            width: 100%; max-width: 600px; max-height: 85vh; overflow-y: auto; padding: 20px; 
+            width: 100%; max-width: 800px; max-height: 85vh; overflow-y: auto; padding: 20px; 
         }
         .role-pill { background: var(--glass); border: 1px solid #333; color: #fff; padding: 10px; border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.9em; }
         
         .role-card { background: linear-gradient(145deg, #1a1a1a, #252525); border-radius: 20px; padding: 20px; border: 2px solid var(--gold); }
-        .role-image-container { width: 100%; max-width: 300px; margin: 0 auto 15px; border-radius: 15px; overflow: hidden; border: 2px solid var(--gold); }
-        .role-img { width: 100%; display: block; }
+        
+        /* Ֆիքսված չափսերով նկարների կոնտեյներ */
+        .role-image-container { 
+            width: 100%; 
+            max-width: 300px; 
+            aspect-ratio: 2 / 3; 
+            margin: 0 auto 15px; 
+            border-radius: 15px; 
+            overflow: hidden; 
+            border: 2px solid var(--gold); 
+            background: #111;
+        }
+        .role-img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            object-position: center top; 
+            display: block; 
+        }
+
         .role-name-text { color: var(--gold); font-size: clamp(1.6em, 5vw, 2.5em); font-weight: 900; margin: 10px 0; }
         .desc-box { background: #000; padding: 15px; border-radius: 12px; text-align: left; border-left: 5px solid var(--gold); }
         .desc-text { color: #ccc; font-size: 1em; line-height: 1.4; }
@@ -94,6 +118,7 @@
         <div class="setup-grid">
             <div><h4 style="color:var(--red-team); margin-top:0;">ԿԱՐՄԻՐ</h4><div id="red-cat-list"></div></div>
             <div><h4 style="color:var(--blue-team); margin-top:0;">ՍԵՎ</h4><div id="black-cat-list"></div></div>
+            <div><h4 style="color:var(--neutral-team); margin-top:0;">ՉԵԶՈՔ</h4><div id="neutral-cat-list"></div></div>
         </div>
     </div>
 </div>
@@ -122,6 +147,7 @@
             <span class="counter-badge">ԸՆԴՀԱՆՈՒՐ: <b id="setup-total-all">0</b></span>
             <span class="counter-badge" style="color:var(--red-team)">🔴 <b id="setup-total-red">0</b></span>
             <span class="counter-badge" style="color:var(--blue-team)">🔵 <b id="setup-total-black">0</b></span>
+            <span class="counter-badge" style="color:var(--neutral-team)">🟢 <b id="setup-total-neutral">0</b></span>
         </div>
 
         <div class="setup-grid">
@@ -132,6 +158,10 @@
             <div class="column">
                 <div style="color:var(--blue-team); font-weight:bold; margin-bottom:5px;">ՍԵՎ</div>
                 <div id="setup-black-inputs"></div>
+            </div>
+            <div class="column">
+                <div style="color:var(--neutral-team); font-weight:bold; margin-bottom:5px;">ՉԵԶՈՔ</div>
+                <div id="setup-neutral-inputs"></div>
             </div>
         </div>
         <button class="host-btn" onclick="startHost()">ՍՏԵՂԾԵԼ ՍԵՆՅԱԿ</button>
@@ -191,12 +221,24 @@
         "Թիկնապահ": { team: "ԿԱՐՄԻՐ", img: "https://i.postimg.cc/SRLpm9QG/թիկնապահ.png", desc: "Արթնանում է գիշերը և պաշտպանում մեկին: Եթե մաֆիան կրակում է պաշտպանվողի վրա, զոհվում է Թիկնապահը նրա փոխարեն:" },
         "Բախտավոր": { team: "ԿԱՐՄԻՐ", img: "https://i.postimg.cc/6qVNBZ6T/բախտավոր.png", desc: "Ունի երկու կյանք: Եթե գիշերը նրա վրա կրակում են կամ ցերեկը հեռացնում են, նա առաջին անգամ չի լքում խաղը:" },
         "Քաղաքացի": { team: "ԿԱՐՄԻՐ", img: "https://i.postimg.cc/7YDkmKX1/քաղաքացի.png", desc: "Հասարակ կարմիր խաղացող: Նրա զենքը տրամաբանությունն է և ցերեկային քվեարկությունը:" },
+        "Լրագրող": { team: "ԿԱՐՄԻՐ", img: "https://i.postimg.cc/j5gqJhw4/larry-king-01-gty-llr-210102-1609623448458-hp-Main.jpg", desc: "Արթնանում է խաղի ընթացքում ընդամենը 1 անգամ: Ընտրում է երկու խաղացողի և պարզում՝ նրանք նու՞յն թիմից են (օրինակ՝ երկուսն էլ սև կամ երկուսն էլ կարմիր), թե՞ տարբեր:" },
+        "Վրիժառու": { team: "ԿԱՐՄԻՐ", img: "https://miro.medium.com/v2/resize:fit:720/format:webp/1*So80rD8bCJbJ47OkT4SuYg.jpeg", desc: "Եթե նրան գիշերը սպանում են, նա չի մահանում միայնակ: Նա իրավունք է ստանում անմիջապես կրակել և իր հետ տանել մեկ այլ խաղացողի:" },
+        "Դատավոր": { team: "ԿԱՐՄԻՐ", img: "https://i.postimg.cc/7YDG8K3R/datavor.png", desc: "Ցերեկային քվեարկության ժամանակ, եթե ինչ-որ մեկին հեռացնում են, Դատավորը կարող է մեկ անգամ խաղի ընթացքում ցույց տալ իր դերը և չեղարկել այդ քվեարկությունը՝ փրկելով խաղացողին:" },
+        "Քաղաքապետ": { team: "ԿԱՐՄԻՐ", img: "https://i.postimg.cc/wTwsHhT5/k'agak'apet.png", desc: "Քաղաքի ղեկավարն է: Նրա ձայնը ցերեկային քվեարկության ժամանակ հավասար է 2 ձայնի:" },
+        "Թափառաշրջիկ": { team: "ԿԱՐՄԻՐ", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Charlie_Chaplin.jpg/800px-Charlie_Chaplin.jpg", desc: "Չունի սեփական տուն, այդ պատճառով ամեն գիշեր քնում է մեկի տանը: Եթե մաֆիան գա նրա տուն, նրան չեն գտնի: Բայց եթե մաֆիան գնա այն մարդու տուն, ում հյուր է գնացել Թափառաշրջիկը, երկուսն էլ կմահանան:" },
+
         "Մաֆիա": { team: "ՍԵՎ", img: "https://i.postimg.cc/yYPz50rt/մաֆիոզ.png", desc: "Սև թիմի զինվորն է: Արթնանում է ամեն գիշեր Դոնի հետ և կրակում մեկ կարմիր խաղացողի վրա:" },
         "Դոն": { team: "ՍԵՎ", img: "https://i.postimg.cc/Y0NwtF2h/դոն.jpg", desc: "Մաֆիայի պարագլուխն է: Գիշերը արթնանում է, կազմակերպում սպանությունը և փնտրում Շերիֆին:" },
         "Կոնտրագենտ": { team: "ՍԵՎ", img: "https://i.postimg.cc/zfzBvz7D/կոնտրագենտ.png", desc: "Սև խաղացող է: Արթնանում է ամեն գիշեր և փորձում գտնել Ագենտին, որպեսզի սևերը առաջինը նրան հեռացնեն:" },
         "Գող": { team: "ՍԵՎ", img: "https://i.postimg.cc/j26rRfq2/գող.png", desc: "Սև խաղացող է: Արթնանում է գիշերը և զրկում մեկ խաղացողի իր ակտիվ ունակությունից տվյալ գիշեր:" },
         "Գեղեցկուհի": { team: "ՍԵՎ", img: "https://i.postimg.cc/xdfC8f51/գեղեցկուհի.png", desc: "Այցելում է մեկին և լռեցնում նրան հաջորդ օրվա համար:" },
-        "Հեղափոխական": { team: "ՍԵՎ", img: "https://i.postimg.cc/PJbkdDf4/հեղափոխական.png", desc: "Սև խաղացող է: Նրան ստուգելիս Շերիֆն ու Հոգևորականը ստանում են սխալ պատասխան:" }
+        "Հեղափոխական": { team: "ՍԵՎ", img: "https://i.postimg.cc/fLFtQ5Rk/rev.webp", desc: "Սև խաղացող է: Ամեն գիշեր ընտրում է մեկ խաղացողի (կարող է նաև իրեն): Եթե այդ գիշեր Շերիֆը կամ Հոգևորականը ստուգեն այդ մարդուն, նրանք կստանան ՍԽԱԼ պատասխան (Կարմիրը կերևա Սև, իսկ Սևը՝ Կարմիր):" },
+        "Փաստաբան": { team: "ՍԵՎ", img: "https://upload.wikimedia.org/wikipedia/en/3/34/Jimmy_McGill_BCS_S3.png", desc: "Սև թիմի պաշտպանն է: Ամեն գիշեր ընտրում է մաֆիայի անդամներից մեկին: Եթե Շերիֆը ստուգի այդ մարդուն, նա կերևա որպես ԿԱՐՄԻՐ (Մաքուր):" },
+        "Ահաբեկիչ": { team: "ՍԵՎ", img: "https://i0.wp.com/bamfstyle.com/wp-content/uploads/2025/11/NC4OM-Anton-MAIN1b.jpg?ssl=1", desc: "Եթե ցերեկը նրան քվեարկությամբ հեռացնում են, նա կարող է ընտրել ցանկացած խաղացողի և պայթել նրա հետ միասին:" },
+        "Սև Կարդինալ": { team: "ՍԵՎ", img: "https://i.postimg.cc/4N7WhN7h/kardinal.png", desc: "Սև խաղացող է, սակայն գիշերը «Մաֆիայի» հետ չի արթնանում և չի մասնակցում կրակոցին։ Առաջին գիշերը, մաֆիայի քնելուց հետո, խաղավարը նրան արթնացնում է և ցույց տալիս բոլոր սև խաղացողներին (այդ թվում՝ Ագենտին)՝ առանց դերերը հստակեցնելու։" },
+
+        "Մոլագար": { team: "ՉԵԶՈՔ", img: "https://i.postimg.cc/6qf7SZy7/hegap'oxakan.png", desc: "Չեզոք խաղացող է, որը կարող է ամեն գիշեր սպանել ցանկացած խաղացողի:" },
+        "Ծաղրածու": { team: "ՉԵԶՈՔ", img: "https://res.cloudinary.com/ybmedia/image/upload/c_crop,h_1000,w_1500,x_0,y_0/c_fill,f_auto,h_1200,q_auto,w_1600/v1/m/c/1/c12ba0e04ac29056b564b890ebf5d49b6296139e/20-best-horror-films-franchises-featuring-scary.jpg", desc: "Խելագար կերպար է: Նրա միակ նպատակն է, որպեսզի ցերեկային քվեարկության ժամանակ իրեն հեռացնեն: Եթե նրան հանում են խաղից, նա ՀԱՂԹՈՒՄ Է:" }
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -209,12 +251,14 @@
     };
 
     function calculate() {
-        let r = 0, b = 0;
+        let r = 0, b = 0, n = 0;
         document.querySelectorAll('.r-role-input').forEach(i => r += Math.max(0, parseInt(i.value) || 0));
         document.querySelectorAll('.b-role-input').forEach(i => b += Math.max(0, parseInt(i.value) || 0));
+        document.querySelectorAll('.n-role-input').forEach(i => n += Math.max(0, parseInt(i.value) || 0));
         document.getElementById('setup-total-red').innerText = r;
         document.getElementById('setup-total-black').innerText = b;
-        document.getElementById('setup-total-all').innerText = r + b;
+        document.getElementById('setup-total-neutral').innerText = n;
+        document.getElementById('setup-total-all').innerText = r + b + n;
     }
 
     function goBack(id) {
@@ -255,7 +299,8 @@
         let html = `<table class="admin-table">`;
         Object.keys(players).forEach(id => {
             let p = players[id];
-            let clr = roleData[p.role]?.team === "ԿԱՐՄԻՐ" ? "role-red-text" : "role-black-text";
+            let tm = roleData[p.role]?.team;
+            let clr = tm === "ԿԱՐՄԻՐ" ? "role-red-text" : (tm === "ՍԵՎ" ? "role-black-text" : "role-neutral-text");
             html += `<tr><td>${p.name}</td><td class="${clr}">${p.role}</td><td style="text-align:right;">
                 <button class="candidate-btn" onclick="addCan('${id}', '${p.name}')">🗳️</button>
                 <button class="kick-btn" onclick="kick('${id}', '${p.name}', '${p.role}')">❌</button>
@@ -325,12 +370,13 @@
     function renderInfo(p, name) {
         if(p.role === "սպասեք...") { document.getElementById('player-role-info').innerHTML = `<h3>Ողջույն ${name}</h3><p>Սպասեք խաղավարին...</p>`; return; }
         const d = roleData[p.role];
+        let tmColor = d.team === 'ԿԱՐՄԻՐ' ? 'var(--red-team)' : (d.team === 'ՍԵՎ' ? 'var(--blue-team)' : 'var(--neutral-team)');
         document.getElementById('player-role-info').innerHTML = `
             <h2 style="margin-bottom:5px;">${name}</h2>
             <div class="role-card">
                 <div class="role-image-container"><img src="${d.img}" class="role-img"></div>
                 <div class="role-name-text">${p.role}</div>
-                <div class="desc-box"><b>Թիմ՝ <span style="color:${d.team==='ԿԱՐՄԻՐ'?'var(--red-team)':'var(--blue-team)'}">${d.team}</span></b><p class="desc-text">${d.desc}</p></div>
+                <div class="desc-box"><b>Թիմ՝ <span style="color:${tmColor}">${d.team}</span></b><p class="desc-text">${d.desc}</p></div>
             </div>`;
     }
 
@@ -381,22 +427,38 @@
     function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
     function initCatalog() {
-        const rList = document.getElementById('red-cat-list'), bList = document.getElementById('black-cat-list');
-        const rInp = document.getElementById('setup-red-inputs'), bInp = document.getElementById('setup-black-inputs');
+        const rList = document.getElementById('red-cat-list');
+        const bList = document.getElementById('black-cat-list');
+        const nList = document.getElementById('neutral-cat-list');
+        
+        const rInp = document.getElementById('setup-red-inputs');
+        const bInp = document.getElementById('setup-black-inputs');
+        const nInp = document.getElementById('setup-neutral-inputs');
+
         for(let r in roleData) {
+            const tm = roleData[r].team;
+            let targetList = rList, targetInp = rInp, inputClass = 'r-role-input', colorVar = 'var(--red-team)';
+            
+            if (tm === "ՍԵՎ") { 
+                targetList = bList; targetInp = bInp; inputClass = 'b-role-input'; colorVar = 'var(--blue-team)'; 
+            } else if (tm === "ՉԵԶՈՔ") { 
+                targetList = nList; targetInp = nInp; inputClass = 'n-role-input'; colorVar = 'var(--neutral-team)'; 
+            }
+
             const pill = document.createElement('div'); pill.className = `role-pill`; 
-            pill.style.borderLeft = `4px solid ${roleData[r].team === "ԿԱՐՄԻՐ" ? 'var(--red-team)' : 'var(--blue-team)'}`;
+            pill.style.borderLeft = `4px solid ${colorVar}`;
             pill.innerHTML = `<span>${r}</span> <span>➜</span>`;
             pill.onclick = () => {
                 const d = roleData[r];
-                document.getElementById('preview-content').innerHTML = `<div class="role-card"><div class="role-image-container"><img src="${d.img}" class="role-img"></div><div class="role-name-text">${r}</div><div class="desc-box"><b>${d.team}</b><p class="desc-text">${d.desc}</p></div></div>`;
+                let descColor = d.team === "ԿԱՐՄԻՐ" ? "var(--red-team)" : (d.team === "ՍԵՎ" ? "var(--blue-team)" : "var(--neutral-team)");
+                document.getElementById('preview-content').innerHTML = `<div class="role-card"><div class="role-image-container"><img src="${d.img}" class="role-img"></div><div class="role-name-text">${r}</div><div class="desc-box"><b style="color:${descColor}">${d.team}</b><p class="desc-text">${d.desc}</p></div></div>`;
                 document.getElementById('role-preview-modal').classList.remove('hidden');
             };
-            roleData[r].team === "ԿԱՐՄԻՐ" ? rList.appendChild(pill) : bList.appendChild(pill);
+            targetList.appendChild(pill);
+
             const row = document.createElement('div'); row.className = 'role-row';
-            const inputClass = roleData[r].team === "ԿԱՐՄԻՐ" ? 'r-role-input' : 'b-role-input';
             row.innerHTML = `<label>${r}</label><input type="number" min="0" class="role-count ${inputClass}" data-name="${r}" value="${['Շերիֆ','Բժիշկ','Մաֆիա','Դոն'].includes(r) ? 1 : 0}" oninput="calculate()">`;
-            roleData[r].team === "ԿԱՐՄԻՐ" ? rInp.appendChild(row) : bInp.appendChild(row);
+            targetInp.appendChild(row);
         }
         calculate();
     }
